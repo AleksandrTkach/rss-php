@@ -3,7 +3,11 @@ $rssURI = 'https://www.nu.nl/rss/Sport';
 
 print_r(getRss($rssURI));
 
-function getRss($rssURI)
+/**
+ * @param string $rssURI
+ * @return string $data The returned string contains JSON
+ */
+function getRss(string $rssURI): string
 {
     $dirGallery = 'images';
     $destination = __DIR__ . '/' . $dirGallery;
@@ -12,30 +16,35 @@ function getRss($rssURI)
     if (!file_exists($destination))
         mkdir($destination, 0777, true);
 
-    $res = [];
+    $data = [];
+
     $xml = simplexml_load_file($rssURI);
-
     foreach ($xml->channel->children()->item as $item) {
+
         $url = (string)$item->enclosure->attributes()->url;
-        $pathInfo = pathinfo($url);
         $file = file_get_contents($url);
+        $hashNewFile = md5($file);
 
-        $uniqueFileName = md5($file) . '.' . $pathInfo['extension'];
+        $uniqueFileName = $hashNewFile . '.' . pathinfo($url)['extension'];
 
-        if (!in_array(md5($file), $issetHashes))
+        if (!in_array($hashNewFile, $issetHashes))
             file_put_contents($destination . '/' . $uniqueFileName, $file);
 
-        $res[] = [
+        $data[] = [
             'title' => (string)$item->title,
             'image' => '/' . $dirGallery . '/' . $uniqueFileName,
         ];
 
     }
 
-    return json_encode($res);
+    return json_encode($data);
 }
 
-function getIssetHashes($dirPath)
+/**
+ * @param string $dirPath
+ * @return array
+ */
+function getIssetHashes(string $dirPath): array
 {
     $res = [];
     foreach (array_diff(scandir($dirPath), ['.', '..']) as $file)
