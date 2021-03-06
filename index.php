@@ -13,8 +13,7 @@ function getRss(string $rssURI): string
     $destination = __DIR__ . '/' . $dirGallery;
     $issetHashes = getIssetHashes($destination);
 
-    if (!file_exists($destination))
-        mkdir($destination, 0777, true);
+    if (!file_exists($destination)) mkdir($destination);
 
     $data = [];
 
@@ -22,6 +21,8 @@ function getRss(string $rssURI): string
     foreach ($xml->channel->children()->item as $item) {
 
         $url = (string)$item->enclosure->attributes()->url;
+        $title = (string)$item->title;
+
         $file = file_get_contents($url);
         $hashNewFile = md5($file);
 
@@ -31,13 +32,12 @@ function getRss(string $rssURI): string
             file_put_contents($destination . '/' . $uniqueFileName, $file);
 
         $data[] = [
-            'title' => (string)$item->title,
+            'title' => $title,
             'image' => '/' . $dirGallery . '/' . $uniqueFileName,
         ];
-
     }
 
-    return json_encode($data);
+    return json_encode($data, JSON_UNESCAPED_SLASHES);
 }
 
 /**
@@ -46,8 +46,10 @@ function getRss(string $rssURI): string
  */
 function getIssetHashes(string $dirPath): array
 {
+    $files = array_diff(scandir($dirPath), ['.', '..']);
+
     $res = [];
-    foreach (array_diff(scandir($dirPath), ['.', '..']) as $file)
+    foreach ($files as $file)
         $res[] = pathinfo($file)['filename'];
 
     return $res;
